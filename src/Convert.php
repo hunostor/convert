@@ -7,7 +7,7 @@
  * Time: 16:31
  */
 
-namespace Convert;
+//namespace Convert;
 
 /**
  * Any string is converted to a 5-digit fixed number
@@ -36,6 +36,10 @@ class Convert
      */
     public function setString($string)
     {
+        if (! is_string($string)) {
+            throw new \Exception('Only string can be used');
+        }
+
         $this->string = $string;
 
         return $this;
@@ -64,14 +68,21 @@ class Convert
     {
         $md5string = $this->convertMD5String($this->string);
         $arrayString = $this->stringConvertArray($md5string);
-        $onlyNumberString = $this->arrayFilterOnlyNumber($arrayString);
-        $result=  $this->setResultCharLength($onlyNumberString);
-
-        $this->result = $this->lengthCorrection($result);
+        $result = $this->arrayFilter($arrayString);
+        $result = $this->lengthCorrection($result);
+        $result = $this->arraySlice($result);
+        $result = $this->arraySequence($result);
+        $this->result = $this->smoothingArrayNumbers($result);
 
         return $this;
     }
 
+    private function arraySequence($array)
+    {
+        natsort($array);
+
+        return $array;
+    }
 
     private function convertMD5String($string)
     {
@@ -83,7 +94,7 @@ class Convert
         return str_split($string);
     }
 
-    private function arrayFilterOnlyNumber($array)
+    private function arrayFilter($array)
     {
         $resultString = '';
         foreach ($array as $item) {
@@ -93,6 +104,42 @@ class Convert
         }
 
         return $resultString;
+    }
+
+    private function arraySlice($string)
+    {
+        $array = array();
+        $offset = 2;
+        $begin = 0;
+        $length = 2;
+        for ($i = 0; $i < $this->resultCharLength; $i++) {
+
+            $numbers = substr($string, $begin, $length);
+
+            if ($numbers == '00') {
+                $numbers = '01';
+            }
+
+            if (! in_array($numbers, $array)) {
+                $array[] = $numbers;
+            } else {
+                $this->resultCharLength++;
+            }
+
+            $begin = $begin + $offset;
+        }
+
+        return $array;
+    }
+
+    private function smoothingArrayNumbers($array)
+    {
+        $string = '';
+        foreach ($array as $item) {
+            $string .= ' ' . $item . ' ';
+        }
+
+        return $string;
     }
 
     private function checkStringLength($string)
@@ -107,11 +154,7 @@ class Convert
 
     private function lengthCorrection($string)
     {
-        if ($this->checkStringLength($string) < $this->resultCharLength) {
-            $string = $string . $string . $string . $string . $string;
-            return $this->setResultCharLength($string);
-        } else {
-            return $string;
-        }
+        $stringGreat = $string . $string . $string . $string . $string;
+        return $stringGreat;
     }
 }
